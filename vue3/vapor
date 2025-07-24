@@ -1,0 +1,5 @@
+// 传统模式：虚拟 DOM + diff
+render() → createVNode() → patch() → updateDOM()
+
+// Vapor Mode：直接 DOM 操作
+render() → updateDOM()

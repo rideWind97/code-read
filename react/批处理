@@ -1,0 +1,121 @@
+# React 批处理（Batching）详解
+
+React 批处理是指：在同一个事件循环中，将多次状态更新（setState/useState）合并，只触发一次组件渲染，从而提升性能、减少不必要的重复渲染。
+
+## 一、原理与机制
+- React 会收集同一事件循环内的所有状态更新，等事件循环结束后统一执行渲染。
+- 这样可以避免每次 setState 都触发一次渲染，提升效率。
+- 批处理的本质是“合并多次 setState，最后只渲染一次”。
+
+## 二、发展历程
+- React 17 及以前：只有在 React 合成事件、生命周期等“受控环境”下才会批处理，setTimeout、Promise、原生事件等异步场景不会批处理。
+- React 18 及以后：自动批处理扩展到所有异步场景（如 setTimeout、Promise、原生事件等），无需手动干预。
+
+## 三、典型场景
+```js
+function handleClick() {
+  setCount(count + 1);
+  setName('Tom');
+  // 只会触发一次渲染
+}
+
+setTimeout(() => {
+  setCount(count + 1);
+  setName('Jerry');
+  // React 18 前：会触发两次渲染
+  // React 18 后：只会触发一次渲染
+}, 0);
+
+function MyComponent() {
+  const [count, setCount] = useState(0);
+  const [flag, setFlag] = useState(false);
+
+  function handleClick() {
+    // React 18 中，以下所有情况都会被批处理
+
+    // 1. React 事件处理器（和之前一样）
+    setCount(c => c + 1);
+    setFlag(f => !f);
+
+    // 2. setTimeout 中的更新现在也会被批处理
+    setTimeout(() => {
+      setCount(c => c + 1);
+      setFlag(f => !f);
+    }, 1000);
+
+    // 3. Promise 中的更新也会被批处理
+    fetch('/api/data').then(() => {
+      setCount(c => c + 1);
+      setFlag(f => !f);
+    });
+
+    // 4. 原生事件处理器中也会被批处理
+    const element = document.getElementById('myButton');
+    element.addEventListener('click', () => {
+      setCount(c => c + 1);
+      setFlag(f => !f);
+    });
+  }
+}
+```
+
+## 四、相关 API
+- `unstable_batchedUpdates`：手动控制批处理（一般用于第三方库或特殊场景）
+  ```js
+  import { unstable_batchedUpdates } from 'react-dom';
+  unstable_batchedUpdates(() => {
+    setA(1);
+    setB(2);
+  });
+  // 只会渲染一次
+  ```
+
+## 五、注意事项
+- 批处理只影响渲染次数，不影响 state 的更新顺序和结果。
+- 批处理不会跨事件循环（如 setTimeout、Promise）合并 React 17 及以前的更新。
+- React 18 后，绝大多数场景都自动批处理。
+
+## 六、总结
+- 批处理是 React 性能优化的基础机制之一。
+- 能有效减少渲染次数，提升应用性能和响应速度。
+- React 18 后，开发者无需关心批处理细节，绝大多数场景都能自动合并更新。
+
+
+
+setState 是同步还是异步？
+在 React 中，setState 既可以是“异步的”，也可以是“同步的”，具体取决于**调用场景**。
+
+---
+
+## 1. 常见场景：setState 是“异步的”
+
+- 在 React 的合成事件、生命周期、批处理环境下，setState 不会立刻更新 state，而是先放入更新队列，等本轮事件循环结束后统一批量更新。
+- 这样做的好处是：可以合并多次 setState，减少渲染次数，提升性能。
+
+**示例：**
+```js
+function handleClick() {
+  setState({ count: this.state.count + 1 });
+  console.log(this.state.count); // 这里拿到的还是旧值
+}
+```
+
+---
+
+## 2. 特殊场景：setState 可能是“同步的”
+
+- 在 setTimeout、Promise、原生事件等非 React 管理的环境下（React 17 及以前），setState 可能是同步的，state 会立即更新。
+- 但 React 18 以后，自动批处理扩展到这些场景，setState 也会变成异步的。
+
+---
+
+## 3. 总结
+
+- **大多数情况下，setState 是异步的。**
+- 这样可以保证批处理和高性能。
+- 但不要依赖 setState 的同步或异步特性来写逻辑，推荐用 useEffect 或 setState 的回调获取最新 state。
+
+---
+
+**一句话总结：**  
+setState 在 React 事件、生命周期等大多数场景下是异步的，目的是为了批处理和性能优化。React 18 后，几乎所有场景下都自动异步批处理。

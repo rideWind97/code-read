@@ -3,15 +3,17 @@ import { Dep } from "../reactive.js";
 
 export function computed(options) {
   let getter, setter;
-  if (typeof options === 'function') {
+  if (typeof options === "function") {
     getter = options;
     setter = () => {};
   } else {
     getter = options.get;
     setter = options.set || (() => {});
   }
+
   let value;
   let dirty = true;
+
   // 依赖收集和缓存
   const runner = () => {
     if (dirty) {
@@ -20,17 +22,19 @@ export function computed(options) {
     }
     return value;
   };
+
   // 依赖响应，数据变更时重置缓存
   new WatcherProxy(getter, () => {
     dirty = true;
   });
+
   return {
     get value() {
       return runner();
     },
     set value(val) {
       setter(val);
-    }
+    },
   };
 }
 

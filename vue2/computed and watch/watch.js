@@ -1,12 +1,15 @@
-// 简易 watch 实现
-import { observe } from "../reactive.js";
-import { watch } from "./watch.js";
+import { Dep } from "../reactive/reactive.js";
 
-const state = { a: 1 };
-observe(state);
+export function watch(obj, key, cb) {
+  let oldVal = obj[key];
 
-watch(state, "a", (newVal, oldVal) => {
-  console.log("a变化了", oldVal, "=>", newVal);
-});
+  function update() {
+    const newVal = obj[key];
+    cb(newVal, oldVal);
+    oldVal = newVal;
+  }
 
-state.a = 2; // 控制台输出：a变化了 1 => 2
+  Dep.target = { update };
+  obj[key]; // 触发 getter，收集依赖
+  Dep.target = null;
+}
