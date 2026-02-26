@@ -66,3 +66,11 @@ flowchart TD
 - observe时如果是数组，会将其原型指向自定义的arrayMethods，并递归observe每一项。
 - 每次调用这些方法，都会触发依赖收集器dep.notify()，实现响应式。
 - 局限：无法监听通过索引直接赋值（如arr[1]=xxx）和length变化。
+
+## vue2为什么不用Object.defineProperty监听数组？
+
+Object.defineProperty 需要指定具体的 key 来拦截。
+对于对象，Vue 在初始化时遍历所有 key（如 name, age）并设置 getter/setter。
+对于数组，理论上可以拦截索引（如 0, 1, 2），但 Vue 2 考虑到性能代价太高，放弃了对数组索引的拦截。
+
+如果一个数组有 10,000 个元素，Vue 必须对这 10,000 个索引逐一调用 defineProperty。更糟糕的是，如果数组长度变化，Vue 还要动态地添加或删除这些拦截器，这会产生巨大的性能开销。

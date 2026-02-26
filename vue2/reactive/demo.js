@@ -1,7 +1,7 @@
 import { observe, Watcher } from "./reactive.js";
 
 // 创建一个普通对象
-const data = { count: 0 };
+const data = { count: 0, arr: [1, 2, 3], obj: { name: "John", age: 20 } };
 
 // 让对象变为响应式
 observe(data);

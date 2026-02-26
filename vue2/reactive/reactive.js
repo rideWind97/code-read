@@ -1,6 +1,7 @@
 // defineReactive：定义响应式属性
 export function defineReactive(obj, key, val) {
   const dep = Dep();
+  console.log(111);
   Object.defineProperty(obj, key, {
     get() {
       if (Dep.target) dep.depend();
